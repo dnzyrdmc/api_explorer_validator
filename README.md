@@ -2,7 +2,7 @@
 
 Bu araç, geliştiricilerin ve veri analistlerinin bilinmeyen bir API'den gelen veriyi, kendi projelerine dahil etmeden önce **güvenli ve şeffaf** bir şekilde incelemelerini sağlayan hafif bir "kum havuzu" (sandbox) çözümüdür. Geliştirme aşamasında claude ve gemini tarafından yardım alınmıştır.
 
-!https://github.com/dnzyrdmc/api_explorer_validator/blob/main/api_explorer_validator.png
+![API Explorer Validator](api_explorer_validator.png)
 
 ## Neden Kullanmalıyım?
 
