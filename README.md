@@ -34,6 +34,6 @@ Hızlıca denemek için aşağıdaki popüler test adreslerini kopyalayabilirsin
 
 ---
 
-> ** Gizlilik Notu:** Bu proje tamamen **istemci taraflı (client-side)** çalışır. Çektiğiniz veya yapıştırdığınız veriler hiçbir sunucuya gönderilmez veya kaydedilmez. Her şey sadece tarayıcınızın belleğinde gerçekleşir.
+> **  ÖNEMLİ NOT:** Bu proje tamamen **istemci taraflı (client-side)** çalışır. Çektiğiniz veya yapıştırdığınız veriler hiçbir sunucuya gönderilmez veya kaydedilmez. Her şey sadece tarayıcınızın belleğinde gerçekleşir.
 
 ---
