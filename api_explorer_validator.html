@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Explorer & Validator Pro</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --panel: #1a1d27;
+        --border: #2d3148;
+        --green: #7ee8a2;
+        --text: #e2e8f0;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Fira Code", monospace;
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      header {
+        padding: 12px 20px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .tabs {
+        display: flex;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+      }
+      .tab {
+        padding: 12px 24px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #666;
+        border-bottom: 2px solid transparent;
+      }
+      .tab.active {
+        color: var(--green);
+        border-bottom-color: var(--green);
+      }
+
+      .control-panel {
+        padding: 15px 20px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+      }
+      .input-group {
+        display: flex;
+        gap: 10px;
+      }
+      input,
+      textarea {
+        flex: 1;
+        padding: 10px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 4px;
+        outline: none;
+      }
+      input:focus {
+        border-color: var(--green);
+      }
+
+      button {
+        padding: 10px 20px;
+        background: var(--green);
+        color: var(--bg);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      button:disabled {
+        opacity: 0.5;
+      }
+      .btn-sec {
+        background: var(--border);
+        color: #ccc;
+        margin-left: 5px;
+      }
+
+      .main-layout {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+      .sidebar {
+        width: 260px;
+        background: var(--panel);
+        border-right: 1px solid var(--border);
+        padding: 15px;
+        overflow-y: auto;
+      }
+      .content {
+        flex: 1;
+        overflow: auto;
+        position: relative;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th {
+        position: sticky;
+        top: 0;
+        background: var(--panel);
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        color: #888;
+        z-index: 10;
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #1e2235;
+        white-space: nowrap;
+      }
+      tr:hover {
+        background: rgba(126, 232, 162, 0.05);
+      }
+
+      .pill {
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        background: rgba(126, 232, 162, 0.1);
+        color: var(--green);
+      }
+      .error-banner {
+        padding: 10px 20px;
+        background: #442a2a;
+        color: #ff8a8a;
+        font-size: 13px;
+        border-bottom: 1px solid #633;
+      }
+      .loading-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 17, 23, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div style="color: var(--green); font-weight: bold">⬡ API VALIDATOR</div>
+      <div style="font-size: 11px; color: #555">Güvenli Veri Analiz Motoru</div>
+    </header>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-url-btn" onclick="showTab('url')">
+        🌐 URL'den Getir
+      </div>
+      <div class="tab" id="tab-paste-btn" onclick="showTab('paste')">
+        📋 JSON Yapıştır
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div id="url-input-zone" class="input-group">
+        <input
+          type="text"
+          id="urlInput"
+          placeholder="https://dummyjson.com/products"
+          value="https://dummyjson.com/products"
+        />
+        <button id="fetchBtn" onclick="fetchData()">Veriyi Çek</button>
+        <button class="btn-sec" onclick="fetchData(true)">
+          Proxy ile Çek (CORS Fix)
+        </button>
+      </div>
+      <div id="paste-input-zone" class="input-group" style="display: none">
+        <textarea
+          id="jsonInput"
+          placeholder="Buraya JSON verisini yapıştırın..."
+        ></textarea>
+        <button onclick="parseJson()">Analiz Et</button>
+      </div>
+    </div>
+
+    <div id="errorBox"></div>
+
+    <div class="main-layout">
+      <aside class="sidebar" id="sidebar">
+        <div style="font-size: 11px; color: #555; margin-bottom: 15px">
+          DİNAMİK FİLTRELER
+        </div>
+        <div id="filters"></div>
+      </aside>
+
+      <main class="content">
+        <div id="loader" class="loading-overlay" style="display: none">
+          Veriler İşleniyor...
+        </div>
+        <div id="tableContainer">
+          <div style="padding: 40px; text-align: center; color: #444">
+            Henüz veri yüklenmedi.
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      let rawData = [],
+        tableFields = [],
+        activeFilters = {};
+
+      function showTab(type) {
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.remove("active"));
+        document.getElementById(`tab-${type}-btn`).classList.add("active");
+        document.getElementById("url-input-zone").style.display =
+          type === "url" ? "flex" : "none";
+        document.getElementById("paste-input-zone").style.display =
+          type === "paste" ? "flex" : "none";
+      }
+
+      async function fetchData(useProxy = false) {
+        const btn = document.getElementById("fetchBtn");
+        const loader = document.getElementById("loader");
+        let url = document.getElementById("urlInput").value.trim();
+
+        if (!url) return alert("Lütfen bir URL girin!");
+        if (useProxy)
+          url = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+
+        btn.disabled = true;
+        loader.style.display = "flex";
+        clearError();
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok)
+            throw new Error(`Sunucu yanıt vermedi: ${response.status}`);
+
+          let data = await response.json();
+          // AllOrigins proxy kullanılıyorsa veri .contents içindedir
+          if (useProxy && data.contents) data = JSON.parse(data.contents);
+
+          processData(data);
+        } catch (err) {
+          showError(
+            `Veri çekilemedi: ${err.message}. Eğer CORS hatası alıyorsanız "Proxy ile Çek" butonunu deneyin.`,
+          );
+        } finally {
+          btn.disabled = false;
+          loader.style.display = "none";
+        }
+      }
+
+      function parseJson() {
+        try {
+          const data = JSON.parse(document.getElementById("jsonInput").value);
+          processData(data);
+        } catch (e) {
+          showError("Geçersiz JSON formatı!");
+        }
+      }
+
+      function processData(data) {
+        // Obje içindeki asıl veri dizisini bul (products, users, posts vb.)
+        let list = Array.isArray(data)
+          ? data
+          : Object.values(data).find((v) => Array.isArray(v));
+
+        if (!list || list.length === 0) {
+          showError("Veri içinde listelenecek bir dizi bulunamadı.");
+          return;
+        }
+
+        rawData = list.map((item) => flattenObject(item));
+        tableFields = Object.keys(rawData[0]);
+        activeFilters = {};
+
+        renderFilters();
+        renderTable();
+      }
+
+      function flattenObject(obj, prefix = "") {
+        return Object.keys(obj).reduce((acc, k) => {
+          const pre = prefix.length ? prefix + "_" : "";
+          if (
+            typeof obj[k] === "object" &&
+            obj[k] !== null &&
+            !Array.isArray(obj[k])
+          ) {
+            Object.assign(acc, flattenObject(obj[k], pre + k));
+          } else {
+            acc[pre + k] = obj[k];
+          }
+          return acc;
+        }, {});
+      }
+
+      function renderFilters() {
+        const container = document.getElementById("filters");
+        container.innerHTML = "";
+        // Sadece ilk 10 anahtar için filtre oluştur
+        tableFields.slice(0, 10).forEach((field) => {
+          const div = document.createElement("div");
+          div.style.marginBottom = "12px";
+          div.innerHTML = `
+                <label style="display:block; font-size:10px; color:#888; margin-bottom:4px;">${field.toUpperCase()}</label>
+                <input type="text" style="width:100%; font-size:11px;" placeholder="Ara..." oninput="updateFilter('${field}', this.value)">
+            `;
+          container.appendChild(div);
+        });
+      }
+
+      function updateFilter(field, val) {
+        activeFilters[field] = val.toLowerCase();
+        renderTable();
+      }
+
+      function renderTable() {
+        const container = document.getElementById("tableContainer");
+        const filtered = rawData.filter((row) => {
+          return Object.entries(activeFilters).every(([key, val]) => {
+            return !val || String(row[key]).toLowerCase().includes(val);
+          });
+        });
+
+        let html = `<table><thead><tr>`;
+        tableFields.forEach((f) => (html += `<th>${f}</th>`));
+        html += `</tr></thead><tbody>`;
+
+        filtered.forEach((row) => {
+          html += `<tr>`;
+          tableFields.forEach((f) => {
+            const val = row[f];
+            const content =
+              typeof val === "boolean"
+                ? `<span class="pill">${val}</span>`
+                : val;
+            html += `<td>${content !== null ? content : "-"}</td>`;
+          });
+          html += `</tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      }
+
+      function showError(msg) {
+        document.getElementById("errorBox").innerHTML =
+          `<div class="error-banner">${msg}</div>`;
+      }
+      function clearError() {
+        document.getElementById("errorBox").innerHTML = "";
+      }
+    </script>
+  </body>
+</html>
